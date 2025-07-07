@@ -1,0 +1,77 @@
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-filebrowser-quantum
+  labels:
+    release: {{ .Release.Name }}
+    app: filebrowser-quantum
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: filebrowser-quantum
+      release: {{ .Release.Name }}
+  strategy:
+    type: Recreate  #Recreate since filebrowser is not scalable yet and does not provide auto roll upgrade yet.
+  template:
+    metadata:
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/config.yaml") . | sha256sum }}
+        checksum/secret: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
+      labels:
+        release: {{ .Release.Name }}
+        app: filebrowser-quantum
+        {{- with .Values.extraPodLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      serviceAccountName: {{ .Values.serviceAccount.name }}
+      securityContext:
+        runAsUser: {{ .Values.securityContext.runAsUser }}
+        runAsNonRoot: true
+        fsGroup: 0
+      containers:
+        - name: filebrowser
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - containerPort: 8080
+          envFrom:
+            - secretRef:
+                name: {{ .Release.Name }}-filebrowser-quantum
+          resources:
+            requests:
+              cpu: {{ .Values.resources.requests.cpu }}
+              memory: {{ .Values.resources.requests.memory }}
+            limits:
+              cpu: {{ .Values.resources.limits.cpu }}
+              memory: {{ .Values.resources.limits.memory }}
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 2
+            successThreshold: 1
+            failureThreshold: 3
+          volumeMounts:
+            - name: config-file
+              mountPath: /home/filebrowser/config.yaml
+              subPath: config.yaml
+            - name: data-volume
+              mountPath: /data
+            - name: config-volume
+              mountPath: /home/filebrowser/data          
+      volumes:
+        - name: config-file
+          configMap:
+            name: {{ .Release.Name }}-filebrowser-quantum
+        - name: data-volume
+          persistentVolumeClaim:
+            claimName: {{ .Release.Name }}-filebrowser-quantum-data
+        - name: config-volume
+          persistentVolumeClaim:
+            claimName: {{ .Release.Name }}-filebrowser-quantum-config       
