@@ -1,0 +1,44 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-filebrowser-quantum
+  labels:
+    release: {{ .Release.Name }}
+    app: filebrowser-quantum
+spec:
+  type: ClusterIP
+  selector:
+    app: filebrowser-quantum
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 8080
+
+---
+{{- if .Values.ingress.enabled }}
+kind: Ingress
+apiVersion: networking.k8s.io/v1
+metadata:
+  name: {{ .Release.Name }}-filebrowser-quantum
+  labels:
+    release: {{ .Release.Name }}
+    app: filebrowser-quantum
+spec:
+  ingressClassName: {{ .Values.ingress.class }}
+  tls:
+    - hosts:
+        - {{ .Values.ingress.host }}
+      secretName: {{ .Values.ingress.certSecret }}
+  rules:
+    - host: {{.Values.ingress.host}}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ .Release.Name }}-filebrowser-quantum
+                port:
+                  number: 8080
+{{- end }}
