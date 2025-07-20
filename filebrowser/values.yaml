@@ -1,6 +1,6 @@
 image:
   repository: ghcr.io/gtsteffaniak/filebrowser
-  tag: 0.7.12-beta
+  tag: 0.7.15-beta
   pullPolicy: IfNotPresent
 
 securityContext:
@@ -59,10 +59,10 @@ config:
         json: false                         # output in json format, currently not supported
         utc: false                          # use UTC time in the output instead of local time
     debugMedia: false                       # output ffmpeg stdout for media integration -- careful can produces lots of output!
-    database: database.db                   # path to the database file
+    database: /home/filebrowser/data/database.db  # path to the database file. Default under data PVC to persist
     sources:                                #  validate:required,dive
       - path: /data                         # file system path. (Can be relative)  validate:required
-        name: "PVC"                         # display name
+        name: "Data"                        # display name
         config:
           indexingIntervalMinutes: 0        # optional manual overide interval in seconds to re-index the source
           disableIndexing: false            # disable the indexing of this source
