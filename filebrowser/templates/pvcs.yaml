@@ -1,9 +1,12 @@
+{{- if .Values.persistence.enabled }}
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
+  {{- if .Values.persistence.keep }}
   annotations:
     helm.sh/resource-policy: keep
+  {{- end }}
   name: {{ .Release.Name }}-filebrowser-quantum-data
   labels:
     release: {{ .Release.Name }}
@@ -15,13 +18,15 @@ spec:
     requests:
       storage: {{ .Values.persistence.dataSize }}
   storageClassName: {{ .Values.persistence.storageClass }}
+{{- end }}
 ---
-{{- if .Values.persistence.enabled }}
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
+  {{- if .Values.persistence.keep }}
   annotations:
     helm.sh/resource-policy: keep
+  {{- end }}
   name: {{ .Release.Name }}-filebrowser-quantum-config
   labels:
     release: {{ .Release.Name }}
@@ -33,4 +38,3 @@ spec:
     requests:
       storage: {{ .Values.persistence.configSize }}
   storageClassName: {{ .Values.persistence.storageClass }}
-{{- end }}

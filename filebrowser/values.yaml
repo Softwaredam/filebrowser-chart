@@ -38,6 +38,7 @@ ingress:
 #persistence: creates 2 PVCs. One for data, and one for filebrowser quantum database and its configuration.
 persistence:
   enabled: true
+  keep: true
   storageClass: standard
   accessMode: ReadWriteOnce
   configSize: 1Gi
