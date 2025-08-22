@@ -16,6 +16,7 @@ spec:
       storage: {{ .Values.persistence.dataSize }}
   storageClassName: {{ .Values.persistence.storageClass }}
 ---
+{{- if .Values.persistence.enabled }}
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
@@ -31,4 +32,5 @@ spec:
   resources:
     requests:
       storage: {{ .Values.persistence.configSize }}
-  storageClassName: {{ .Values.persistence.storageClass }}  
+  storageClassName: {{ .Values.persistence.storageClass }}
+{{- end }}

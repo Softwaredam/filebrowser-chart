@@ -43,6 +43,9 @@ persistence:
   configSize: 1Gi
   dataSize: 1Gi
 
+extraVolumes: []
+extraVolumeMounts: []
+
 #adminPassword: overrides the FILEBROWSER_ADMIN_PASSWORD env var. 
 adminPassword:
   #passwordLength: for admin. Also set the minLength under config
