@@ -24,13 +24,18 @@ ingress:
   class: nginx
   host: filebrowser.example.com
   certSecret: secret
+  maxBodySize: 100M # 0 for unlimited
 
 persistence:
   enabled: true
+  keep: true
   storageClass: standard
   accessMode: ReadWriteOnce
   configSize: 1Gi
   dataSize: 1Gi
+
+extraVolumes: []
+extraVolumeMounts: []
 
 #adminPassword: overrides the FILEBROWSER_ADMIN_PASSWORD env var. 
 adminPassword:
