@@ -40,9 +40,21 @@ export RELEASE_NAME="share"
 
 helm upgrade --install \
      --namespace="${FILEBROWSER_NAMESPACE}" \
+     --create-namespace \
      "${RELEASE_NAME}" \
      filebrowser \
      --values filebrowser-values.yaml
+```
+
+### Admin password
+After each upgrade/deploy, a new secret will be generated if not provided through config. 
+To get the password, use the following for ease: 
+
+```bash
+export FILEBROWSER_NAMESPACE="filebrowser"
+export RELEASE_NAME="share"
+
+kubectl -n "${FILEBROWSER_NAMESPACE}"  get secrets ${RELEASE_NAME}-filebrowser-quantum -oyaml | yq '.data.FILEBROWSER_ADMIN_PASSWORD' | base64 -d | pbcopy
 ```
 
 ## Kubernetes objects
