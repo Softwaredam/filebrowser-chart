@@ -24,6 +24,7 @@ ingress:
   class: nginx
   host: filebrowser.example.com
   certSecret: secret
+  annotations: {} 
 
 persistence:
   enabled: true

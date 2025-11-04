@@ -21,6 +21,10 @@ kind: Ingress
 apiVersion: networking.k8s.io/v1
 metadata:
   name: {{ .Release.Name }}-filebrowser-quantum
+  {{- with .Values.ingress.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}  
   labels:
     release: {{ .Release.Name }}
     app: filebrowser-quantum
