@@ -2,7 +2,6 @@
 # Filebrowser Quantum Chart
 
 This project contains a helm chart to install the [Filebrowser Quantum](https://github.com/gtsteffaniak/filebrowser) on a Kubernetes cluster.
-Same as the Filebrowser Quantum itself, this project is in beta. 
 
 
 ## Installation
