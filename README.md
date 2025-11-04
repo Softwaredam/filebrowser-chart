@@ -24,6 +24,10 @@ ingress:
   enabled: true
   host: filebrowser.example.com
   certSecret: secret-filebrowser
+  annotations:
+    cert-manager.io/cluster-issuer: lets-encrypt
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/proxy-body-size: "10g"
 
 adminPassword:
   passwordLength: 50

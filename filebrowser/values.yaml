@@ -1,16 +1,21 @@
+# image: location, and version of the filebrowser-quantum to use
 image:
   repository: ghcr.io/gtsteffaniak/filebrowser
-  tag: 0.8.8-beta
+  tag: 1.0.0-stable
   pullPolicy: IfNotPresent
 
+# securityContext: of the pod
 securityContext:
   runAsUser: 1000
 
+#extraPodLabels: 
 extraPodLabels: {}
 
+#serviceAccount: The current serviceAccount.name is default.
 serviceAccount:
   name: default  
 
+#resources: of the pod. It uses minimum now.
 resources:
   requests:
     cpu: 300m
@@ -19,12 +24,18 @@ resources:
     cpu: 500m
     memory: 300Mi
 
+#ingress: is per default disabled.
 ingress:
+  #ingress.enabled: false per default. 
   enabled: false
   class: nginx
   host: filebrowser.example.com
   certSecret: secret
+  #ingress.annotations: empty per default. Add any annotation required for example to increase body size or enable lets-encrypt certs.
+  annotations: {} 
 
+#persistence: is enabled by default to save the configuration and the data.
+#persistence: creates 2 PVCs. One for data, and one for filebrowser quantum database and its configuration.
 persistence:
   enabled: true
   storageClass: standard
@@ -39,7 +50,7 @@ adminPassword:
   passwordOverride: ""  # Leave empty to auto-generate
 
 #config: contains application config file which will be mounted to the pod
-#config: these defaults are copied from https://github.com/gtsteffaniak/filebrowser/wiki/Full-Config-Example
+#config: these defaults are copied from https://github.com/gtsteffaniak/filebrowser/blob/stable/v1.0.0/frontend/public/config.generated.yaml
 config:
   server:
     minSearchLength: 3                      # minimum length of search query to begin searching (default: 3)
@@ -70,22 +81,21 @@ config:
           disabled: false                   # disable the source, this is useful so you don't need to remove it from the config file
           indexingIntervalMinutes: 0        # optional manual overide interval in minutes to re-index the source
           disableIndexing: false            # disable the indexing of this source
-          maxWatchers: 0                    # number of concurrent watchers to use for this source, currently not supported
-          neverWatchPaths:                  # paths that get initially once. Useful for folders that rarely change contents (without source path prefix)
-          exclude:                          # exclude files and folders from indexing, if include is not set
-            hidden: false                   # exclude hidden files and folders.
+          conditionals:                     # conditional rules to apply when indexing to include/exclude certain items
+            ignoreHidden: false             # exclude hidden files and folders.
             ignoreZeroSizeFolders: false    # ignore folders with 0 size
-            filePaths:                      # list of filepaths Eg. "folder1" or "file1.txt" or "folder1/file1.txt" (without source path prefix)
-            folderPaths:                    # (filepath) list of folder names to include/exclude. Eg. "folder1" or "folder1/subfolder" (do not include source path, just the subpaths from the source path)
-            fileNames:                      # (global) list of file names to include/exclude. Eg. "a.jpg"
-            folderNames:                    # (global) list of folder names to include/exclude. Eg. "@eadir" or ".thumbnails"
-            fileEndsWith:                   # (global) exclude files that end with these suffixes. Eg. ".jpg" or ".txt"
-            folderEndsWith:                 # (global) exclude folders that end with these suffixes. Eg. ".thumbnails" or ".git"
-            fileStartsWith:                 # (global) exclude files that start with these prefixes. Eg. "archive-" or "backup-"
-            folderStartsWith:               # (global) exclude folders that start with these prefixes. Eg. "archive-" or "backup-"
-          include:                          # include files and folders from indexing, if exclude is not set
-            rootFolders:                    # list of root folders to include, relative to the source path (eg. "folder1")
-            rootFiles:                      # list of root files to include, relative to the source path (eg. "file1.txt")
+            rules:                          # list of item rules to apply to specific paths
+              - neverWatchPath: ""          # index the folder in the first pass to get included in search, but never re-indexed.
+                includeRootItem: ""         # include only these items at root folder level
+                fileStartsWith: ""          # (global) exclude files that start with these prefixes. Eg. "archive-" or "backup-"
+                folderStartsWith: ""        # (global) exclude folders that start with these prefixes. Eg. "archive-" or "backup-"
+                fileEndsWith: ""            # (global) exclude files that end with these suffixes. Eg. ".jpg" or ".txt"
+                folderEndsWith: ""          # (global) exclude folders that end with these suffixes. Eg. ".thumbnails" or ".git"
+                folderPath: ""              # (global) exclude folders that match this path. Eg. "/path/to/folder" or "/path/to/folder/subfolder"
+                filePath: ""                # (global) exclude files that match this path. Eg. "/path/to/file.txt" or "/path/to/file.txt/subfile.txt"
+                fileName: ""                # (global) exclude files that match these names. Eg. "file.txt" or "test.csv"
+                folderName: ""              # (global) exclude folders that match these names. Eg. "folder" or "subfolder"
+                viewable: false             # Enable viewing in UI but exclude from indexing
           defaultUserScope: "/"             # default "/" should match folders under path
           defaultEnabled: true              # should be added as a default source for new users?
           createUserDir: false              # create a user directory for each user
@@ -107,7 +117,7 @@ config:
       noauth: false                         # if set to true, overrides all other auth methods and disables authentication
       password:                             #  validate:omitempty
         enabled: true
-        minLength: 20                       # minimum pasword length required.  validate:omitempty,min=5
+        minLength: 5                        # minimum pasword length required, default is 5.  validate:omitempty
         signup: false                       # allow signups on login page if enabled -- not secure.  validate:omitempty
         recaptcha:                          # recaptcha config, only used if signup is enabled  validate:omitempty
           host: ""                          #  validate:required
@@ -138,11 +148,12 @@ config:
       - text: "Chart (Softwaredam)"
         title: "Chart (Softwaredam)"
         url: "https://github.com/Softwaredam/filebrowser-chart/"
-      - text: "(untracked)"                 # the text to display on the link  validate:required
-        title: "untracked"                  # the title to display on hover
-        url: "https://github.com/gtsteffaniak/filebrowser/releases/" # the url to link to  validate:required
+      - text: "Release sources"                 # the text to display on the link  validate:required
+        title: "Release sources"                  # the title to display on hover
+        url: "https://github.com/gtsteffaniak/filebrowser/tree/stable/v1.0.0" # the url to link to  validate:required
     disableNavButtons: false                # disable the nav buttons in the sidebar
     styling:
+      disableEventThemes: false             # disable the event based themes,
       customCSS: ""                         # if a valid path to a css file is provided, it will be applied for all users. (eg. "reduce-rounded-corners.css")
       lightBackground: "#f5f5f5"            # specify a valid CSS color property value to use as the background color in light mode
       darkBackground: "#141D24"             # Specify a valid CSS color property value to use as the background color in dark mode
@@ -155,6 +166,7 @@ config:
           css: ""                           # The css file path and filename to use for the theme.
     favicon: ""                             # path to a favicon to use for the frontend
     description: "FileBrowser Quantum is a file manager for the web which can be used to manage files on your server" # description that shows up in html head meta description
+    loginIcon: ""                           # path to an image file for the login page icon
   userDefaults:
     editorQuickSave: false                  # show quick save button in editor
     hideSidebarFileActions: false           # hide the file actions in the sidebar
@@ -186,11 +198,14 @@ config:
       defaultMediaPlayer: false             # disable html5 media player and use the default media player
       folder: false                         # show thumbnail preview image for folder files
     permissions:
-      api: false
-      admin: false
-      modify: false
-      share: false
-      realtime: false
+      api: false                            # allow api access
+      admin: false                          # allow admin access
+      modify: false                         # allow modifying files
+      share: false                          # allow sharing files
+      realtime: false                       # allow realtime updates
+      delete: false                         # allow deleting files
+      create: false                         # allow creating or uploading files
+      download: false                       # allow downloading files
     loginMethod: "password"                 # login method to use: eg. password, proxy, oidc
     disableUpdateNotifications: false       # disable update notifications banner for admin users
     deleteWithoutConfirming: false          # delete files without confirmation
