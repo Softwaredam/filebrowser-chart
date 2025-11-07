@@ -45,24 +45,17 @@ persistence:
   dataSize: 1Gi
 
 # extraVolumes: Use additional volumes for the deployment. May be a mix of any volume type.
+# Remember adding the mounted volume paths as sources under config.server.sources
 # Reference: https://kubernetes.io/docs/concepts/storage/volumes/
+# Reference also located at: https://kubernetes.io/docs/concepts/storage/volumes/
 # Example using an (existing) persistentVolumeClaim:
 #
+# example:
 # extraVolumes:
-#   - name: raw-data
-#     persistentVolumeClaim:
-#       claimName: raw-data
+#   - pvcName: existing-data-1
+#     mountPath: /existing-data-1
+#     readOnly: true
 extraVolumes: []
-
-# extraVolumeMounts: Configure where and how to mount additional volumes.
-# Remember adding the mounted volume paths as sources to the filebrowser config.
-# Reference also located at: https://kubernetes.io/docs/concepts/storage/volumes/
-#
-# extraVolumeMounts:
-#   - mountPath: /srv/raw-data
-#     name: raw-data
-#     readOnly: false
-extraVolumeMounts: []
 
 #adminPassword: overrides the FILEBROWSER_ADMIN_PASSWORD env var. 
 adminPassword:

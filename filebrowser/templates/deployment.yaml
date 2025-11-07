@@ -67,9 +67,13 @@ spec:
             - name: data-volume
               mountPath: /data
             {{- end }}
-            {{- with .Values.extraVolumeMounts }}
-            {{- . | toYaml | nindent 12 }}
+          {{- if .Values.extraVolumes }}
+            {{- range .Values.extraVolumes }}
+            - name: {{ .pvcName | quote }}
+              mountPath: {{ .mountPath | quote }}
+              readOnly: {{ default false .readOnly }}
             {{- end }}
+          {{- end }}
       volumes:
         - name: config-file
           configMap:
@@ -82,6 +86,10 @@ spec:
           persistentVolumeClaim:
             claimName: {{ .Release.Name }}-filebrowser-quantum-data
         {{- end }}
-        {{- with .Values.extraVolumes }}
-        {{- . | toYaml | nindent 8 }}
+      {{- if .Values.extraVolumes }}
+        {{- range .Values.extraVolumes }}
+        - name: {{ .pvcName | quote }}
+          persistentVolumeClaim:
+            claimName: {{ .pvcName | quote }}
         {{- end }}
+      {{- end }}
