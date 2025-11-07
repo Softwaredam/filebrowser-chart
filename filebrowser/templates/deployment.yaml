@@ -61,17 +61,27 @@ spec:
             - name: config-file
               mountPath: /home/filebrowser/config.yaml
               subPath: config.yaml
-            - name: data-volume
-              mountPath: /data
             - name: config-volume
               mountPath: /home/filebrowser/data          
+            {{- if .Values.persistence.enabled }}
+            - name: data-volume
+              mountPath: /data
+            {{- end }}
+            {{- with .Values.extraVolumeMounts }}
+            {{- . | toYaml | nindent 12 }}
+            {{- end }}
       volumes:
         - name: config-file
           configMap:
             name: {{ .Release.Name }}-filebrowser-quantum
-        - name: data-volume
-          persistentVolumeClaim:
-            claimName: {{ .Release.Name }}-filebrowser-quantum-data
         - name: config-volume
           persistentVolumeClaim:
             claimName: {{ .Release.Name }}-filebrowser-quantum-config       
+        {{- if .Values.persistence.enabled }}
+        - name: data-volume
+          persistentVolumeClaim:
+            claimName: {{ .Release.Name }}-filebrowser-quantum-data
+        {{- end }}
+        {{- with .Values.extraVolumes }}
+        {{- . | toYaml | nindent 8 }}
+        {{- end }}
