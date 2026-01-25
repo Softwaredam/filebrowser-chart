@@ -7,7 +7,7 @@ This project contains a helm chart to install the [Filebrowser Quantum](https://
 ## Installation
 
 **Prerequisites:**
-- There is already a namespace
+- Access to a Kubernetes cluster
 - There are sufficent resources
 
 ### Configuration
