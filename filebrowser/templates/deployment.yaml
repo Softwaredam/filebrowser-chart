@@ -38,6 +38,9 @@ spec:
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
             - containerPort: 8080
+          env: 
+            - name: FILEBROWSER_CONFIG 
+              value: /home/filebrowser/config.yaml
           envFrom:
             - secretRef:
                 name: {{ .Release.Name }}-filebrowser-quantum
