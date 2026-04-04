@@ -1,16 +1,28 @@
+# Filebrowser Quantum Helm Chart
 
-# Filebrowser Quantum Chart
+This project contains a Helm chart to install the [FileBrowser Quantum](https://github.com/gtsteffaniak/filebrowser) on a Kubernetes cluster.
 
-This project contains a helm chart to install the [Filebrowser Quantum](https://github.com/gtsteffaniak/filebrowser) on a Kubernetes cluster.
+This open source project is proudly created and maintained by [Softwaredam](https://softwaredam.com). 
 
+<p align="center">
+  <img src="https://softwaredam.com/wp-content/uploads/2025/08/logo.svg" alt="Softwaredam Logo" height="150" style="vertical-align: middle;"/>
+  <span style="margin: 0 12px; font-size: 44px; vertical-align: middle;">×</span>
+  <img src="icon.svg" alt="Filebrowser Quantum Chart Logo" height="180" style="vertical-align: middle;"/>
+</p>
 
-## Installation
+# Support
+This Helm chart is provided as open-source software under the terms of the included license.
+
+If you require commercial support, consulting, or custom solutions, please feel free to contact us at [Softwaredam](https://softwaredam.com). 
+
+# Installation
 
 **Prerequisites:**
-- Access to a Kubernetes cluster
-- There are sufficent resources
 
-### Configuration
+- Access to a Kubernetes cluster
+- Sufficent resources
+
+## Configuration
 
 Prepare your configuration in a values file. See `values.yaml` for all the possibilities. 
 
@@ -33,7 +45,7 @@ adminPassword:
   passwordOverride: ""  # Leave empty to auto-generate
 ```
 
-### Deployment
+## Deployment
 
 Then use `helm` to install, like:
 
