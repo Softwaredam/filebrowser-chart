@@ -1,0 +1,32 @@
+FileBrowser Quantum has been deployed!
+
+{{- if .Values.ingress.enabled }}
+Access the application at:
+{{- range .Values.ingress.hosts }}
+  http{{ if $.Values.ingress.tls }}s{{ end }}://{{ .host }}
+{{- end }}
+{{- else if eq .Values.service.type "NodePort" }}
+Get the application URL by running:
+  export NODE_PORT=$(kubectl get --namespace {{ .Release.Namespace }} -o jsonpath="{.spec.ports[0].nodePort}" services {{ include "filebrowser-quantum.fullname" . }})
+  export NODE_IP=$(kubectl get nodes --namespace {{ .Release.Namespace }} -o jsonpath="{.items[0].status.addresses[0].address}")
+  echo "http://$NODE_IP:$NODE_PORT"
+{{- else if eq .Values.service.type "LoadBalancer" }}
+Get the application URL by running (may take a few minutes for the IP to be assigned):
+  export SERVICE_IP=$(kubectl get svc --namespace {{ .Release.Namespace }} {{ include "filebrowser-quantum.fullname" . }} --template "{{"{{ range (index .status.loadBalancer.ingress 0) }}{{.}}{{ end }}"}}")
+  echo "http://$SERVICE_IP:{{ .Values.service.port }}"
+{{- else }}
+Access the application via port-forward:
+  kubectl port-forward --namespace {{ .Release.Namespace }} svc/{{ include "filebrowser-quantum.fullname" . }} 8080:{{ .Values.service.port }}
+  Then open: http://localhost:8080
+{{- end }}
+
+Admin credentials:
+  Username: {{ .Values.config.auth.adminUsername | default "admin" }}
+{{- if .Values.secret.existingSecret }}
+  Password: stored in Secret "{{ .Values.secret.existingSecret }}" (key: FILEBROWSER_ADMIN_PASSWORD)
+{{- else if .Values.secret.adminPassword }}
+  Password: set via values (secret.adminPassword)
+{{- else }}
+  Password (auto-generated): retrieve with:
+    kubectl get secret --namespace {{ .Release.Namespace }} {{ include "filebrowser-quantum.fullname" . }} -o jsonpath="{.data.FILEBROWSER_ADMIN_PASSWORD}" | base64 -d; echo
+{{- end }}

@@ -1,90 +1,121 @@
-
----
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ .Release.Name }}-filebrowser-quantum
+  name: {{ include "filebrowser-quantum.fullname" . }}
   labels:
-    release: {{ .Release.Name }}
-    app: filebrowser-quantum
+    {{- include "filebrowser-quantum.labels" . | nindent 4 }}
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: filebrowser-quantum
-      release: {{ .Release.Name }}
+      {{- include "filebrowser-quantum.selectorLabels" . | nindent 6 }}
   strategy:
-    type: Recreate  #Recreate since filebrowser is not scalable yet and does not provide auto roll upgrade yet.
+    type: Recreate
   template:
     metadata:
       annotations:
-        checksum/config: {{ include (print $.Template.BasePath "/config.yaml") . | sha256sum }}
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
         checksum/secret: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
+        {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
       labels:
-        release: {{ .Release.Name }}
-        app: filebrowser-quantum
-        {{- with .Values.extraPodLabels }}
+        {{- include "filebrowser-quantum.selectorLabels" . | nindent 8 }}
+        {{- with .Values.podLabels }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
     spec:
-      serviceAccountName: {{ .Values.serviceAccount.name }}
+      serviceAccountName: {{ include "filebrowser-quantum.serviceAccountName" . }}
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.podSecurityContext }}
       securityContext:
-        runAsUser: {{ .Values.securityContext.runAsUser }}
-        runAsNonRoot: true
-        fsGroup: 0
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       containers:
         - name: filebrowser
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+          {{- with .Values.containerSecurityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
           ports:
-            - containerPort: 8080
-          env: 
-            - name: FILEBROWSER_CONFIG 
+            - name: http
+              containerPort: {{ .Values.config.server.port | default 8080 }}
+              protocol: TCP
+          env:
+            - name: FILEBROWSER_CONFIG
               value: /home/filebrowser/config.yaml
+            {{- with .Values.extraEnv }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
           envFrom:
             - secretRef:
-                name: {{ .Release.Name }}-filebrowser-quantum
+                name: {{ include "filebrowser-quantum.secretName" . }}
+          {{- with .Values.resources }}
           resources:
-            requests:
-              cpu: {{ .Values.resources.requests.cpu }}
-              memory: {{ .Values.resources.requests.memory }}
-            limits:
-              cpu: {{ .Values.resources.limits.cpu }}
-              memory: {{ .Values.resources.limits.memory }}
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
           readinessProbe:
             httpGet:
               path: /health
-              port: 8080
+              port: http
             initialDelaySeconds: 5
             periodSeconds: 10
             timeoutSeconds: 2
-            successThreshold: 1
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 15
+            periodSeconds: 20
+            timeoutSeconds: 3
             failureThreshold: 3
           volumeMounts:
             - name: config-file
               mountPath: /home/filebrowser/config.yaml
               subPath: config.yaml
-            - name: config-volume
-              mountPath: /home/filebrowser/data          
-            {{- if .Values.persistence.enabled }}
-            - name: data-volume
+            {{- if or .Values.persistence.config.enabled .Values.persistence.config.existingClaim }}
+            - name: config-pvc
+              mountPath: /home/filebrowser/data
+            {{- end }}
+            {{- if or .Values.persistence.data.enabled .Values.persistence.data.existingClaim }}
+            - name: data-pvc
               mountPath: /data
             {{- end }}
             {{- with .Values.extraVolumeMounts }}
-            {{- . | toYaml | nindent 12 }}
+            {{- toYaml . | nindent 12 }}
             {{- end }}
       volumes:
         - name: config-file
           configMap:
-            name: {{ .Release.Name }}-filebrowser-quantum
-        - name: config-volume
+            name: {{ include "filebrowser-quantum.fullname" . }}
+        {{- if or .Values.persistence.config.enabled .Values.persistence.config.existingClaim }}
+        - name: config-pvc
           persistentVolumeClaim:
-            claimName: {{ .Release.Name }}-filebrowser-quantum-config       
-        {{- if .Values.persistence.enabled }}
-        - name: data-volume
+            claimName: {{ .Values.persistence.config.existingClaim | default (printf "%s-config" (include "filebrowser-quantum.fullname" .)) }}
+        {{- end }}
+        {{- if or .Values.persistence.data.enabled .Values.persistence.data.existingClaim }}
+        - name: data-pvc
           persistentVolumeClaim:
-            claimName: {{ .Release.Name }}-filebrowser-quantum-data
+            claimName: {{ .Values.persistence.data.existingClaim | default (printf "%s-data" (include "filebrowser-quantum.fullname" .)) }}
         {{- end }}
         {{- with .Values.extraVolumes }}
-        {{- . | toYaml | nindent 8 }}
+        {{- toYaml . | nindent 8 }}
         {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

@@ -1,4 +1,17 @@
 apiVersion: v2
 name: filebrowser-quantum
-version: "0.1"
-appVersion: "0.1"
+description: A Helm chart for FileBrowser Quantum — a modern web-based file manager
+type: application
+version: "2.0.0"
+appVersion: "1.2.4-stable"
+keywords:
+  - filebrowser
+  - file-manager
+  - storage
+home: https://github.com/gtsteffaniak/filebrowser
+sources:
+  - https://github.com/Softwaredam/filebrowser-chart
+  - https://github.com/gtsteffaniak/filebrowser
+maintainers:
+  - name: Softwaredam
+    url: https://github.com/Softwaredam

@@ -1,0 +1,161 @@
+# values-example.yaml — Production-ready example configuration
+#
+# Usage:
+#   helm install filebrowser ./filebrowser -f filebrowser/values-example.yaml
+
+# -- Use a specific image tag (defaults to Chart.appVersion if empty)
+image:
+  tag: "1.2.4-stable"
+
+# -- Pod security
+podSecurityContext:
+  runAsUser: 1000
+  runAsNonRoot: true
+  fsGroup: 1000
+
+containerSecurityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop: [ALL]
+
+# -- Resources tuned for a small-to-medium deployment
+resources:
+  requests:
+    cpu: 500m
+    memory: 256Mi
+  limits:
+    cpu: "1"
+    memory: 512Mi
+
+# -- Schedule on specific nodes
+nodeSelector:
+  kubernetes.io/os: linux
+
+# -- Service account with cloud provider annotations (e.g., AWS IRSA)
+serviceAccount:
+  create: true
+  annotations: {}
+    # eks.amazonaws.com/role-arn: arn:aws:iam::123456789012:role/filebrowser-s3
+
+# -- Expose via Ingress with TLS
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/proxy-body-size: "10g"
+  hosts:
+    - host: filebrowser.example.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: filebrowser-tls
+      hosts:
+        - filebrowser.example.com
+
+# -- Secrets: use an externally managed secret (e.g., via External Secrets Operator)
+# The Secret must contain at minimum: FILEBROWSER_ADMIN_PASSWORD, FILEBROWSER_JWT_TOKEN_SECRET
+# secret:
+#   existingSecret: "filebrowser-credentials"
+
+# -- Or set secrets directly (they'll be stored in a Helm-managed Secret)
+secret:
+  adminPassword: ""       # leave empty to auto-generate
+  jwtSecret: "my-static-jwt-signing-key-change-me"
+  oidcClientId: ""
+  oidcClientSecret: ""
+
+# -- Independent storage classes for config (fast) and data (large)
+persistence:
+  config:
+    enabled: true
+    storageClass: "fast-ssd"
+    size: 2Gi
+    retain: true
+    labels:
+      backup: "daily"
+  data:
+    enabled: true
+    storageClass: "bulk-hdd"
+    size: 100Gi
+    retain: true
+    labels:
+      backup: "weekly"
+    annotations:
+      velero.io/backup-schedule: "weekly"
+
+# -- Mount additional data sources
+extraVolumes:
+  - name: shared-nfs
+    nfs:
+      server: nfs.internal
+      path: /exports/shared
+
+extraVolumeMounts:
+  - name: shared-nfs
+    mountPath: /srv/shared
+    readOnly: false
+
+# -- Application config
+config:
+  server:
+    port: 8080
+    baseURL: /
+    externalUrl: "https://filebrowser.example.com"
+    database: /home/filebrowser/data/database.db
+    logging:
+      - levels: "info|warning|error"
+        output: "stdout"
+        json: true
+        utc: true
+    sources:
+      - path: /data
+        name: "Primary Storage"
+        config:
+          defaultEnabled: true
+          defaultUserScope: "/"
+          createUserDir: true
+      - path: /srv/shared
+        name: "Shared Files"
+        config:
+          defaultEnabled: true
+          defaultUserScope: "/"
+          private: true
+    indexSqlConfig:
+      walMode: true
+      cacheSizeMB: 64
+  auth:
+    tokenExpirationHours: 8
+    adminUsername: "admin"
+    methods:
+      password:
+        enabled: true
+        minLength: 12
+      # -- OIDC example (secrets via secret.oidcClientId / secret.oidcClientSecret)
+      oidc:
+        enabled: true
+        issuerUrl: "https://auth.example.com/realms/myorg"
+        scopes: "openid email profile groups"
+        userIdentifier: "preferred_username"
+        createUser: true
+        adminGroup: "filebrowser-admins"
+        groupsClaim: "groups"
+  frontend:
+    name: "My Files"
+    externalLinks:
+      - text: "Help Desk"
+        title: "Open a support ticket"
+        url: "https://support.example.com"
+  userDefaults:
+    darkMode: true
+    locale: "en"
+    viewMode: "normal"
+    permissions:
+      api: false
+      admin: false
+      modify: true
+      share: true
+      delete: true
+      create: true
+      download: true

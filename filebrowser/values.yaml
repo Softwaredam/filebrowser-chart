@@ -1,21 +1,33 @@
-# image: location, and version of the filebrowser-quantum to use
+# -- Override the chart name portion of resource names
+nameOverride: ""
+# -- Override the full resource name (ignores release name and chart name)
+fullnameOverride: ""
+
+# -- Container image
 image:
   repository: ghcr.io/gtsteffaniak/filebrowser
-  tag: 1.2.4-stable
+  # -- Overrides the image tag (default is Chart.appVersion)
+  tag: ""
   pullPolicy: IfNotPresent
 
-# securityContext: of the pod
-securityContext:
+# -- Image pull secrets for private registries
+imagePullSecrets: []
+
+# -- Pod-level security context
+# Ref: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/
+podSecurityContext:
   runAsUser: 1000
+  runAsNonRoot: true
+  fsGroup: 1000
 
-#extraPodLabels: 
-extraPodLabels: {}
+# -- Container-level security context
+containerSecurityContext: {}
+  # allowPrivilegeEscalation: false
+  # readOnlyRootFilesystem: false
+  # capabilities:
+  #   drop: [ALL]
 
-#serviceAccount: The current serviceAccount.name is default.
-serviceAccount:
-  name: default  
-
-#resources: of the pod. It uses minimum now.
+# -- Resource requests and limits
 resources:
   requests:
     cpu: 300m
@@ -24,241 +36,316 @@ resources:
     cpu: 500m
     memory: 300Mi
 
-#ingress: is per default disabled.
+# -- Extra annotations to add to the pod
+podAnnotations: {}
+
+# -- Extra labels to add to the pod
+podLabels: {}
+
+# -- Node selector for pod scheduling
+nodeSelector: {}
+
+# -- Tolerations for pod scheduling
+tolerations: []
+
+# -- Affinity rules for pod scheduling
+affinity: {}
+
+# -- ServiceAccount configuration
+serviceAccount:
+  # -- Create a dedicated ServiceAccount
+  create: false
+  # -- Annotations (e.g., for AWS IRSA or GCP Workload Identity)
+  annotations: {}
+  # -- Name override. When create=false and name is empty, uses "default"
+  name: ""
+
+# -- Service configuration
+service:
+  type: ClusterIP
+  port: 8080
+  annotations: {}
+
+# -- Ingress configuration
 ingress:
-  #ingress.enabled: false per default. 
   enabled: false
-  class: nginx
-  host: filebrowser.example.com
-  certSecret: secret
-  #ingress.annotations: empty per default. Add any annotation required for example to increase body size or enable lets-encrypt certs.
-  annotations: {} 
+  # -- Ingress class name (e.g., nginx, traefik)
+  className: ""
+  annotations: {}
+    # cert-manager.io/cluster-issuer: letsencrypt-prod
+    # nginx.ingress.kubernetes.io/proxy-body-size: "10g"
+  hosts:
+    - host: filebrowser.example.com
+      paths:
+        - path: /
+          pathType: Prefix
+  # -- TLS configuration. Leave empty [] for no TLS.
+  tls: []
+  #  - secretName: filebrowser-tls
+  #    hosts:
+  #      - filebrowser.example.com
 
-#persistence: is enabled by default to save the configuration and the data.
-#persistence: creates 2 PVCs. One for data, and one for filebrowser quantum database and its configuration.
+# -- Secret configuration for sensitive values.
+# All sensitive fields are stored in a Kubernetes Secret and injected as
+# FILEBROWSER_* environment variables, which override config file values.
+secret:
+  # -- Use an existing Secret instead of generating one.
+  # Must contain keys: FILEBROWSER_ADMIN_PASSWORD, FILEBROWSER_JWT_TOKEN_SECRET
+  # Optional keys: FILEBROWSER_TOTP_SECRET, FILEBROWSER_OIDC_CLIENT_ID,
+  #   FILEBROWSER_OIDC_CLIENT_SECRET, FILEBROWSER_ONLYOFFICE_SECRET,
+  #   FILEBROWSER_RECAPTCHA_SECRET
+  existingSecret: ""
+  # -- Auto-generated admin password length (only when existingSecret is empty
+  # and adminPassword is not set)
+  adminPasswordLength: 20
+  # -- Set a specific admin password. Leave empty to auto-generate.
+  adminPassword: ""
+  # -- JWT signing key. Leave empty to auto-generate.
+  # WARNING: if auto-generated and the Secret is deleted, all sessions are invalidated.
+  jwtSecret: ""
+  # -- TOTP encryption secret
+  totpSecret: ""
+  # -- OIDC client ID
+  oidcClientId: ""
+  # -- OIDC client secret
+  oidcClientSecret: ""
+  # -- OnlyOffice JWT secret
+  onlyofficeSecret: ""
+  # -- reCAPTCHA secret key
+  recaptchaSecret: ""
+
+# -- Persistence configuration. Config and data PVCs are independent.
 persistence:
-  enabled: true
-  keep: true
-  storageClass: standard
-  accessMode: ReadWriteOnce
-  configSize: 1Gi
-  dataSize: 1Gi
+  # -- Config PVC: stores the FileBrowser database and runtime state
+  config:
+    enabled: true
+    # -- Use an existing PVC (skips PVC creation)
+    existingClaim: ""
+    # -- Storage class. Empty string "" uses the cluster default.
+    storageClass: ""
+    accessMode: ReadWriteOnce
+    size: 1Gi
+    # -- Add helm.sh/resource-policy: keep to prevent deletion on helm uninstall
+    retain: true
+    annotations: {}
+    labels: {}
+  # -- Data PVC: stores user files
+  data:
+    enabled: true
+    # -- Use an existing PVC (skips PVC creation)
+    existingClaim: ""
+    storageClass: ""
+    accessMode: ReadWriteOnce
+    size: 10Gi
+    retain: true
+    annotations: {}
+    labels: {}
 
-# extraVolumes: Use additional volumes for the deployment. May be a mix of any volume type.
-# Reference: https://kubernetes.io/docs/concepts/storage/volumes/
-# Example using an (existing) persistentVolumeClaim:
-#
-# extraVolumes:
-#   - name: raw-data
-#     persistentVolumeClaim:
-#       claimName: raw-data
+# -- Extra volumes to add to the pod
+# Ref: https://kubernetes.io/docs/concepts/storage/volumes/
 extraVolumes: []
+  # - name: raw-data
+  #   persistentVolumeClaim:
+  #     claimName: raw-data
 
-# extraVolumeMounts: Configure where and how to mount additional volumes.
-# Remember adding the mounted volume paths as sources to the filebrowser config.
-# Reference also located at: https://kubernetes.io/docs/concepts/storage/volumes/
-#
-# extraVolumeMounts:
-#   - mountPath: /srv/raw-data
-#     name: raw-data
-#     readOnly: false
+# -- Extra volume mounts for the filebrowser container.
+# Remember to add mounted paths as sources in the config below.
 extraVolumeMounts: []
+  # - name: raw-data
+  #   mountPath: /srv/raw-data
+  #   readOnly: false
 
-#adminPassword: overrides the FILEBROWSER_ADMIN_PASSWORD env var. 
-adminPassword:
-  #passwordLength: for admin. Also set the minLength under config
-  passwordLength: 20
-  passwordOverride: ""  # Leave empty to auto-generate
+# -- Extra environment variables for the container
+extraEnv: []
+  # - name: TZ
+  #   value: "Europe/Berlin"
 
-#config: contains application config file which will be mounted to the pod
-#config: these defaults are copied from https://github.com/gtsteffaniak/filebrowser/blob/stable/v1.0.0/frontend/public/config.generated.yaml
+# -- Application configuration. Rendered verbatim as config.yaml and mounted into the pod.
+# All fields map 1:1 to the FileBrowser Quantum config file format.
+# Ref: https://filebrowserquantum.com/en/docs/configuration/configuration-overview/
+#
+# NOTE: Sensitive fields (auth.key, auth.adminPassword, oidc.clientSecret, etc.)
+# should NOT be set here — they are injected via environment variables from the Secret.
 config:
   server:
-    minSearchLength: 3                      # minimum length of search query to begin searching (default: 3)
-    disableUpdateCheck: false               # disables backend update check service
-    numImageProcessors: 4                   # number of concurrent image processing jobs used to create previews, default is number of cpu cores available.
-    socket: ""                              # socket to listen on
-    tlsKey: ""                              # path to TLS key
-    tlsCert: ""                             # path to TLS cert
-    disablePreviews: false                  # disable all previews thumbnails, simple icons will be used
-    disablePreviewResize: false             # disable resizing of previews for faster loading over slow connections
-    disableTypeDetectionByHeader: false     # disable type detection by header, useful if filesystem is slow.
-    port: 8080                              # port to listen on
-    baseURL: /                              # base URL for the server, the subpath that the server is running on.
-    listen: ""                              # address to listen on (default: 0.0.0.0)
+    port: 8080
+    baseURL: /
+    listen: ""
+    socket: ""
+    externalUrl: ""
+    internalUrl: ""
+    database: /home/filebrowser/data/database.db
+    cacheDir: "tmp"
+    cacheDirCleanup: false
+    maxArchiveSize: 50
+    minSearchLength: 3
+    numImageProcessors: 4
+    disableUpdateCheck: false
+    disablePreviews: false
+    disablePreviewResize: false
+    disableTypeDetectionByHeader: false
+    tlsKey: ""
+    tlsCert: ""
     logging:
-      - levels: ""                          # separated list of log levels to enable. (eg. "info|warning|error|debug")
-        apiLevels: ""                       # separated list of log levels to enable for the API. (eg. "info|warning|error")
-        output: "stdout"                    # output location. (eg. "stdout" or "path/to/file.log")
-        noColors: false                     # disable colors in the output
-        json: false                         # output in json format
-        utc: false                          # use UTC time in the output instead of local time
-    database: /home/filebrowser/data/database.db  # path to the database file. Default under data PVC to persist
-    sources:                                #  validate:required,dive
-      - path: /data                         # file system path. (Can be relative)  validate:required
-        name: "Data"                        # display name
+      - levels: ""
+        apiLevels: ""
+        output: "stdout"
+        noColors: false
+        json: false
+        utc: false
+    sources:
+      - path: /data
+        name: "Data"
         config:
-          denyByDefault: false              # deny access unless an "allow" access rule was specifically created.
-          private: false                    # designate as source as private -- currently just means no sharing permitted.
-          disabled: false                   # disable the source, this is useful so you don't need to remove it from the config file
-          rules:                            # list of item rules to apply to specific paths
-            - neverWatchPath: ""            # index the folder in the first pass to get included in search, but never re-indexed.
-              includeRootItem: ""           # include only these items at root folder level
-              fileStartsWith: ""            # (global) exclude files that start with these prefixes. Eg. "archive-" or "backup-"
-              folderStartsWith: ""          # (global) exclude folders that start with these prefixes. Eg. "archive-" or "backup-"
-              fileEndsWith: ""              # (global) exclude files that end with these suffixes. Eg. ".jpg" or ".txt"
-              folderEndsWith: ""            # (global) exclude folders that end with these suffixes. Eg. ".thumbnails" or ".git"
-              folderPath: ""                # (global) exclude folders that match this path. Eg. "/path/to/folder" or "/path/to/folder/subfolder"
-              filePath: ""                  # (global) exclude files that match this path. Eg. "/path/to/file.txt" or "/path/to/file.txt/subfile.txt"
-              fileName: ""                  # (global) exclude files that match these names. Eg. "file.txt" or "test.csv"
-              folderName: ""                # (global) exclude folders that match these names. Eg. "folder" or "subfolder"
-              viewable: false               # Enable viewing in UI but exclude from indexing
-              ignoreHidden: false           # Excludes only hidden files and folders
-              ignoreZeroSizeFolders: false  # Excludes only folders with 0 size
-              ignoreSymlinks: false         # Excludes symbolic links
-          defaultUserScope: "/"             # defaults to root of index "/" should match folders under path
-          defaultEnabled: true              # should be added as a default source for new users?
-          createUserDir: false              # create a user directory for each user under defaultUserScope + username
-          useLogicalSize: false             # calculate sizes based on logical size instead of disk utilization (du -sh), folders will be 0 bytes when empty.
-    externalUrl: ""                         # used by share links if set (eg. http://mydomain.com)
-    internalUrl: ""                         # used by integrations if set, this is the base domain that an integration service will use to communicate with filebrowser (eg. http://localhost:8080)
-    cacheDir: "tmp"                         # path to the cache directory, used for thumbnails and other cached files
-    cacheDirCleanup: false                  # whether to automatically cleanup the cache directory. Note: docker must also mount a persistent volume to persist the cache (default: false)
-    maxArchiveSize: 50                      # max pre-archive combined size of files/folder that are allowed to be archived (in GB)
-    filesystem:                             # filesystem settings
-      createFilePermission: "644"           # Unix permissions like 644, 755, 2755 (default: 644)  validate:required,file_permission
-      createDirectoryPermission: "755"      # Unix permissions like 755, 2755, 1777 (default: 755)  validate:required,file_permission
-    indexSqlConfig:                         # Index database SQL configuration
-      batchSize: 1000                       # number of items to batch in a single transaction, typically 500-5000. higher = faster but could use more memory.
-      cacheSizeMB: 32                       # size of the SQLite cache in MB
-      walMode: false                        # enable the more complex WAL journaling mode. Slower, more memory usage, but better for deployments with constant user activity.
-      disableReuse: false                   # enable to always create a new indexing database on startup.
+          denyByDefault: false
+          private: false
+          disabled: false
+          defaultEnabled: true
+          defaultUserScope: "/"
+          createUserDir: false
+          useLogicalSize: false
+          rules:
+            - neverWatchPath: ""
+              includeRootItem: ""
+              fileStartsWith: ""
+              folderStartsWith: ""
+              fileEndsWith: ""
+              folderEndsWith: ""
+              folderPath: ""
+              filePath: ""
+              fileName: ""
+              folderName: ""
+              viewable: false
+              ignoreHidden: false
+              ignoreZeroSizeFolders: false
+              ignoreSymlinks: false
+    filesystem:
+      createFilePermission: "644"
+      createDirectoryPermission: "755"
+    indexSqlConfig:
+      batchSize: 1000
+      cacheSizeMB: 32
+      walMode: false
+      disableReuse: false
   auth:
-    tokenExpirationHours: 2                 # time in hours each web UI session token is valid for. Default is 2 hours.
+    tokenExpirationHours: 2
+    adminUsername: "admin"
     methods:
-      proxy:                                #  validate:omitempty
+      proxy:
         enabled: false
-        createUser: false                   # create user if not exists
-        header: ""                          # required header to use for authentication. Security Warning: FileBrowser blindly accepts the header value as username.
-        logoutRedirectUrl: ""               # if provider logout url is provided, filebrowser will also redirect to logout url. Custom logout query params are respected.
-      noauth: false                         # if set to true, overrides all other auth methods and disables authentication
-      password:                             #  validate:omitempty
+        createUser: false
+        header: ""
+        logoutRedirectUrl: ""
+      noauth: false
+      password:
         enabled: true
-        minLength: 20                       # minimum pasword length required, default is 5.  validate:omitempty
-        signup: false                       # allow signups on login page if enabled -- not secure.  validate:omitempty
-        recaptcha:                          # recaptcha config, only used if signup is enabled  validate:omitempty
-          host: ""                          #  validate:required
-          key: ""                           #  validate:required
-          secret: ""                        #  validate:required
-        enforcedOtp: false                  # if set to true, TOTP is enforced for all password users users. Otherwise, users can choose to enable TOTP.
-      oidc:                                 #  validate:omitempty
-        enabled: false                      # whether to enable OIDC authentication
-        clientId: ""                        # secret: client id of the OIDC application
-        clientSecret: ""                    # secret: client secret of the OIDC application
-        issuerUrl: ""                       # authorization URL of the OIDC provider
-        scopes: "openid email profile"      # scopes to request from the OIDC provider
-        userIdentifier: "preferred_username" # the field value to use as the username. Default is "preferred_username", can also be "email" or "username", or "phone"
-        disableVerifyTLS: false             # disable TLS verification for the OIDC provider. This is insecure and should only be used for testing.
-        logoutRedirectUrl: ""               # if provider logout url is provided, filebrowser will also redirect to logout url. Custom logout query params are respected.
-        createUser: false                   # create user if not exists
-        adminGroup: ""                      # if set, users in this group will be granted admin privileges.
-        groupsClaim: "groups"               # the JSON field name to read groups from. Default is "groups"
-    key: ""                                 # secret: the key used to sign the JWT tokens. If not set, a random key will be generated.
-    adminUsername: "admin"                       # secret: the username of the admin user. If not set, the default is "admin".
-    adminPassword: "**hidden**"             # secret: the password of the admin user. If not set, the default is "admin".
-    totpSecret: ""                          # secret: secret used to encrypt TOTP secrets
+        minLength: 20
+        signup: false
+        enforcedOtp: false
+        recaptcha:
+          host: ""
+          key: ""
+      oidc:
+        enabled: false
+        issuerUrl: ""
+        scopes: "openid email profile"
+        userIdentifier: "preferred_username"
+        disableVerifyTLS: false
+        logoutRedirectUrl: ""
+        createUser: false
+        adminGroup: ""
+        groupsClaim: "groups"
   frontend:
-    name: "FileBrowser Quantum"             # display name
-    disableDefaultLinks: false              # disable default links in the sidebar
-    disableUsedPercentage: false            # disable used percentage for the sources in the sidebar
+    name: "FileBrowser Quantum"
+    disableDefaultLinks: false
+    disableUsedPercentage: false
+    disableNavButtons: false
+    favicon: ""
+    description: "FileBrowser Quantum is a file manager for the web which can be used to manage files on your server"
+    loginIcon: ""
+    oidcLoginButtonText: ""
     externalLinks:
       - text: "Chart (Softwaredam)"
         title: "Chart (Softwaredam)"
         url: "https://github.com/Softwaredam/filebrowser-chart/"
-      - text: "Release sources"                 # the text to display on the link  validate:required
-        title: "Release sources"                  # the title to display on hover
-        url: "https://github.com/gtsteffaniak/filebrowser/releases/" # the url to link to  validate:required
-    disableNavButtons: false                # disable the nav buttons in the sidebar
+      - text: "Release sources"
+        title: "Release sources"
+        url: "https://github.com/gtsteffaniak/filebrowser/releases/"
     styling:
-      disableEventThemes: false             # disable the event based themes,
-      customCSS: ""                         # if a valid path to a css file is provided, it will be applied for all users. (eg. "reduce-rounded-corners.css")
-      lightBackground: "#f5f5f5"            # specify a valid CSS color property value to use as the background color in light mode
-      darkBackground: "#141D24"             # Specify a valid CSS color property value to use as the background color in dark mode
-      customThemes:                         # A list of custom css files that each user can select to override the default styling. if "default" is key name then it will be the default option.
+      disableEventThemes: false
+      customCSS: ""
+      lightBackground: "#f5f5f5"
+      darkBackground: "#141D24"
+      customThemes:
         alternative:
-          description: "Reduce rounded corners" # The description of the theme to display in the UI.
-          css: "reduce-rounded-corners.css" # The css file path and filename to use for the theme.
+          description: "Reduce rounded corners"
+          css: "reduce-rounded-corners.css"
         default:
-          description: "The default theme"  # The description of the theme to display in the UI.
-          css: ""                           # The css file path and filename to use for the theme.
-    favicon: ""                             # path to a favicon to use for the frontend
-    description: "FileBrowser Quantum is a file manager for the web which can be used to manage files on your server" # description that shows up in html head meta description
-    loginIcon: ""                           # path to an image file for the login page icon
-    oidcLoginButtonText: ""                 # text to display on the OIDC login button
+          description: "The default theme"
+          css: ""
   userDefaults:
-    editorQuickSave: false                  # show quick save button in editor
-    hideSidebarFileActions: false           # hide the file actions in the sidebar
-    disableQuickToggles: false              # disable the quick toggles in the sidebar
-    disableSearchOptions: false             # disable the search options in the search bar
-    stickySidebar: true                     # keep sidebar open when navigating
-    darkMode: true                          # should dark mode be enabled
-    locale: "en"                            # language to use: eg. de, en, or fr
-    viewMode: "normal"                      # view mode to use: eg. normal, list, grid, or compact
-    singleClick: false                      # open directory on single click, also enables middle click to open in new tab
-    showHidden: false                       # show hidden files in the UI. On windows this includes files starting with a dot and windows hidden files
-    dateFormat: false                       # when false, the date is relative, when true, the date is an exact timestamp
-    gallerySize: 3                          # 0-9 - the size of the gallery thumbnails
-    themeColor: "var(--blue)"               # theme color to use: eg. #ff0000, or var(--red), var(--purple), etc
-    quickDownload: false                    # show icon to download in one click
-    disablePreviewExt: ""                   # space separated list of file extensions to disable preview for
-    disableViewingExt: ""                   # space separated list of file extensions to disable viewing for
-    lockPassword: false                     # disable the user from changing their password
-    disableSettings: false                  # disable the user from viewing the settings page
+    darkMode: true
+    locale: "en"
+    viewMode: "normal"
+    singleClick: false
+    showHidden: false
+    dateFormat: false
+    gallerySize: 3
+    themeColor: "var(--blue)"
+    quickDownload: false
+    stickySidebar: true
+    editorQuickSave: false
+    hideSidebarFileActions: false
+    disableQuickToggles: false
+    disableSearchOptions: false
+    disablePreviewExt: ""
+    disableViewingExt: ""
+    lockPassword: false
+    disableSettings: false
+    deleteWithoutConfirming: false
+    disableUpdateNotifications: false
+    loginMethod: "password"
+    customTheme: ""
+    showSelectMultiple: false
+    debugOffice: false
+    disableOnlyOfficeExt: ".md .txt .pdf .html .xml"
     preview:
-      disableHideSidebar: false             # keep sidebar open when previewing files
-      highQuality: true                     # use high quality thumbnails
-      image: true                           # show thumbnails for image files
-      video: true                           # show thumbnails for video files
-      motionVideoPreview: true              # show multiple frames for videos in thumbnail preview when hovering
-      office: true                          # show thumbnails for office files
-      popup: true                           # show larger popup preview when hovering over thumbnail
-      autoplayMedia: true                   # autoplay media files in preview
-      defaultMediaPlayer: false             # disable the styled feature-rich media player for browser default
-      folder: true                          # show thumbnails for folders that have previewable contents
+      disableHideSidebar: false
+      highQuality: true
+      image: true
+      video: true
+      motionVideoPreview: true
+      office: true
+      popup: true
+      autoplayMedia: true
+      defaultMediaPlayer: false
+      folder: true
     permissions:
-      api: false                            # allow api access
-      admin: false                          # allow admin access
-      modify: false                         # allow modifying files
-      share: false                          # allow sharing files
-      realtime: false                       # allow realtime updates
-      delete: false                         # allow deleting files
-      create: false                         # allow creating or uploading files
-      download: true                        # allow downloading files
-    loginMethod: "password"                 # login method to use: eg. password, proxy, oidc
-    disableUpdateNotifications: false       # disable update notifications banner for admin users
-    deleteWithoutConfirming: false          # delete files without confirmation
-    fileLoading:                            # upload and download settings
+      api: false
+      admin: false
+      modify: false
+      share: false
+      realtime: false
+      delete: false
+      create: false
+      download: true
+    fileLoading:
       maxConcurrentUpload: 10
       uploadChunkSizeMb: 10
       clearAll: false
       downloadChunkSizeMb: 0
-    disableOnlyOfficeExt: ".md .txt .pdf .html .xml" # list of file extensions to disable onlyoffice editor for
-    customTheme: ""                         # Name of theme to use chosen from custom themes config.
-    showSelectMultiple: false               # show select multiple files on desktop
-    debugOffice: false                      # debug onlyoffice editor
   integrations:
-    office:                                 #  validate:omitempty
-      url: ""                               # The URL to the OnlyOffice Document Server, needs to be accessible to the user.  validate:required
-      internalUrl: ""                       # An optional internal address that the filebrowser server can use to communicate with the OnlyOffice Document Server, could be useful to bypass proxy.
-      secret: ""                            # secret: authentication key for OnlyOffice integration  validate:required
-      viewOnly: false                       # view only mode for OnlyOffice
-    media:                                  #  validate:omitempty
-      ffmpegPath: ""                        # path to ffmpeg directory with ffmpeg and ffprobe (eg. /usr/local/bin)
-      convert:                              # config for ffmpeg conversion settings
-        imagePreview:                       # supported image preview formats. defaults vary by type (see individual type docs)
+    office:
+      url: ""
+      internalUrl: ""
+      viewOnly: false
+    media:
+      ffmpegPath: ""
+      convert:
+        imagePreview:
           heic: false
           jpeg: true
-        videoPreview:                       # supported video preview formats. defaults to true for all types unless explicitly disabled.
+        videoPreview:
           3g2: true
           3gp: true
           asf: true
@@ -277,5 +364,5 @@ config:
           vob: true
           webm: true
           wmv: true
-      debug: false                          # output ffmpeg stdout for media integration -- careful can produces lots of output!
-      extractEmbeddedSubtitles: false       # extract embedded subtitles from media files
+      debug: false
+      extractEmbeddedSubtitles: false

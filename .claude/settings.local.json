@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:helm.sh)",
+      "WebFetch(domain:filebrowserquantum.com)",
+      "WebSearch",
+      "Bash(git -C /Users/Jan/GithubRepos/filebrowser-chart log --oneline --all | head -30)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "WebFetch(domain:artifacthub.io)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:codersociety.com)",
+      "WebFetch(domain:www.baeldung.com)",
+      "WebFetch(domain:deepwiki.com)",
+      "Bash(helm template test-release filebrowser/ 2>&1)",
+      "Bash(helm template test-release filebrowser/ -f filebrowser/values-example.yaml 2>&1 | head -20)",
+      "Bash(helm template test-release filebrowser/ --set secret.existingSecret=my-external-secret 2>&1 | grep -A5 \"secret\\\\|Secret\" | head -20)",
+      "Bash(helm template test filebrowser/ --set persistence.config.enabled=false --set persistence.data.enabled=false 2>&1 | grep -E \"PersistentVolumeClaim|config-pvc|data-pvc\" | head -10)"
+    ]
+  }
+}
