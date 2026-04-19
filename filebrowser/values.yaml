@@ -64,11 +64,19 @@ extraVolumes: []
 #     readOnly: false
 extraVolumeMounts: []
 
-#adminPassword: overrides the FILEBROWSER_ADMIN_PASSWORD env var. 
+#adminPassword: config for FILEBROWSER_ADMIN_PASSWORD env var.
 adminPassword:
-  #passwordLength: for admin. Also set the minLength under config
+  #passwordLength: for auto-generated password. Also set the minLength under config
   passwordLength: 20
-  passwordOverride: ""  # Leave empty to auto-generate
+  #createSecret: set to false when providing FILEBROWSER_ADMIN_PASSWORD via existingSecrets
+  createSecret: true
+
+# existingSecrets: List of existing Kubernetes secrets to load as environment variables.
+existingSecrets: []
+# Example:
+# existingSecrets:
+#   - name: my-filebrowser-secrets
+#   - name: my-jwt-secrets
 
 #config: contains application config file which will be mounted to the pod
 #config: these defaults are copied from https://github.com/gtsteffaniak/filebrowser/blob/stable/v1.0.0/frontend/public/config.generated.yaml

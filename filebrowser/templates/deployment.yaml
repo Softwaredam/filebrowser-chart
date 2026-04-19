@@ -42,8 +42,14 @@ spec:
             - name: FILEBROWSER_CONFIG 
               value: /home/filebrowser/config.yaml
           envFrom:
+            {{- if .Values.adminPassword.createSecret }}
             - secretRef:
                 name: {{ .Release.Name }}-filebrowser-quantum
+            {{- end }}
+            {{- range .Values.existingSecrets }}
+            - secretRef:
+                name: {{ .name }}
+            {{- end }}
           resources:
             requests:
               cpu: {{ .Values.resources.requests.cpu }}

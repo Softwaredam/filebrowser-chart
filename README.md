@@ -42,8 +42,26 @@ ingress:
 
 adminPassword:
   passwordLength: 50
-  passwordOverride: ""  # Leave empty to auto-generate
+  createSecret: true   # Set false if providing FILEBROWSER_ADMIN_PASSWORD via existingSecrets
+
+existingSecrets:
+  - name: filebrowser-secrets
 ```
+
+Create a Kubernetes secret with environment variables to override config values:
+
+```yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: filebrowser-secrets
+type: Opaque
+stringData:
+  FILEBROWSER_ADMIN_PASSWORD: "your-admin-secret"
+  FILEBROWSER_JWT_TOKEN_SECRET: "your-jwt-secret"
+```
+
+See the [FileBrowser documentation](https://filebrowserquantum.com/en/docs/reference/environment-variables/) for all available environment variables and secrets.
 
 ## Deployment
 
@@ -62,8 +80,12 @@ helm upgrade --install \
 ```
 
 ### Admin password
-After each upgrade/deploy, a new secret will be generated if not provided through config. 
-To get the password, use the following for ease: 
+Two ways to set the admin password:
+
+1. **Auto-generate** (default): `createSecret: true`
+2. **External secret**: `createSecret: false`, include `FILEBROWSER_ADMIN_PASSWORD` in your secret
+
+To retrieve an auto-generated password:
 
 ```bash
 export FILEBROWSER_NAMESPACE="filebrowser"
