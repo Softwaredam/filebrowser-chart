@@ -3,38 +3,44 @@
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  {{- if .Values.persistence.keep }}
   annotations:
+    {{- if .Values.persistence.keep }}
     helm.sh/resource-policy: keep
-  {{- end }}
+    {{- end }}
+    {{- with .Values.persistence.data.annotations }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
   name: {{ .Release.Name }}-filebrowser-quantum-data
   labels:
     release: {{ .Release.Name }}
     app: filebrowser-quantum
 spec:
   accessModes:
-    - {{ .Values.persistence.accessMode }}
+    - {{ .Values.persistence.data.accessMode | default .Values.persistence.accessMode }}
   resources:
     requests:
-      storage: {{ .Values.persistence.dataSize }}
-  storageClassName: {{ .Values.persistence.storageClass }}
-{{- end }}
+      storage: {{ .Values.persistence.data.size }}
+  storageClassName: {{ .Values.persistence.data.storageClass | default .Values.persistence.storageClass }}
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  {{- if .Values.persistence.keep }}
   annotations:
+    {{- if .Values.persistence.keep }}
     helm.sh/resource-policy: keep
-  {{- end }}
+    {{- end }}
+    {{- with .Values.persistence.config.annotations }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
   name: {{ .Release.Name }}-filebrowser-quantum-config
   labels:
     release: {{ .Release.Name }}
     app: filebrowser-quantum
 spec:
   accessModes:
-    - {{ .Values.persistence.accessMode }}
+    - {{ .Values.persistence.config.accessMode | default .Values.persistence.accessMode }}
   resources:
     requests:
-      storage: {{ .Values.persistence.configSize }}
-  storageClassName: {{ .Values.persistence.storageClass }}
+      storage: {{ .Values.persistence.config.size }}
+  storageClassName: {{ .Values.persistence.config.storageClass | default .Values.persistence.storageClass }}
+{{- end }}

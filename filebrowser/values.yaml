@@ -34,15 +34,20 @@ ingress:
   #ingress.annotations: empty per default. Add any annotation required for example to increase body size or enable lets-encrypt certs.
   annotations: {} 
 
-#persistence: is enabled by default to save the configuration and the data.
-#persistence: creates 2 PVCs. One for data, and one for filebrowser quantum database and its configuration.
+# persistence: is enabled by default to save the configuration and the data.
+# persistence: creates 2 PVCs. One for data, and one for filebrowser quantum database and its configuration.
 persistence:
   enabled: true
   keep: true
+  # Global defaults - used if per-PVC settings are not specified
   storageClass: standard
   accessMode: ReadWriteOnce
-  configSize: 1Gi
-  dataSize: 1Gi
+
+  # Per-PVC configuration - override global defaults as needed
+  data:
+    size: 1Gi
+  config:
+    size: 1Gi
 
 # extraVolumes: Use additional volumes for the deployment. May be a mix of any volume type.
 # Reference: https://kubernetes.io/docs/concepts/storage/volumes/
