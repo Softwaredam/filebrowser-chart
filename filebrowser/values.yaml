@@ -75,6 +75,16 @@ adminPassword:
   passwordLength: 20
   passwordOverride: ""  # Leave empty to auto-generate
 
+#extraEnvSecrets: mounts the key-vals in K8s secret, which will eventually be passed as env vars as is to the pod.
+#extraEnvSecrets: use to pass optional extra env vars. The key-vals will be passed as-is as envvar
+#extraEnvSecrets: This is especially useful when passing configuration as env var for secrets like https://filebrowserquantum.com/en/docs/reference/environment-variables/
+#extraEnvSecrets: FILEBROWSER_ADMIN_PASSWORD is defined as adminPassword. Se above.
+extraEnvSecrets: {}
+  # FILEBROWSER_OIDC_CLIENT_ID: 'asdf-asdf-asdf'
+  # FILEBROWSER_OIDC_CLIENT_SECRET: '123-123-123-123'
+
+ 
+
 #config: contains application config file which will be mounted to the pod
 #config: these defaults are copied from https://github.com/gtsteffaniak/filebrowser/blob/stable/v1.0.0/frontend/public/config.generated.yaml
 config:
