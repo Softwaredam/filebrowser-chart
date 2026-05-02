@@ -38,17 +38,17 @@ spec:
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
             - containerPort: 8080
-          env: 
-            - name: FILEBROWSER_CONFIG 
+          env:
+            - name: FILEBROWSER_CONFIG
               value: /home/filebrowser/config.yaml
+            {{- with .Values.extraEnv }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
           envFrom:
-            {{- if .Values.adminPassword.createSecret }}
             - secretRef:
                 name: {{ .Release.Name }}-filebrowser-quantum
-            {{- end }}
-            {{- range .Values.existingSecrets }}
-            - secretRef:
-                name: {{ .name }}
+            {{- with .Values.extraEnvFromSecrets }}
+            {{- toYaml . | nindent 12 }}
             {{- end }}
           resources:
             requests:
@@ -71,7 +71,7 @@ spec:
               mountPath: /home/filebrowser/config.yaml
               subPath: config.yaml
             - name: config-volume
-              mountPath: /home/filebrowser/data          
+              mountPath: /home/filebrowser/data
             {{- if .Values.persistence.enabled }}
             - name: data-volume
               mountPath: /data
@@ -85,7 +85,7 @@ spec:
             name: {{ .Release.Name }}-filebrowser-quantum
         - name: config-volume
           persistentVolumeClaim:
-            claimName: {{ .Release.Name }}-filebrowser-quantum-config       
+            claimName: {{ .Release.Name }}-filebrowser-quantum-config
         {{- if .Values.persistence.enabled }}
         - name: data-volume
           persistentVolumeClaim:

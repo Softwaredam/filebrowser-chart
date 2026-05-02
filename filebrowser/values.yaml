@@ -64,6 +64,28 @@ extraVolumes: []
 #     readOnly: false
 extraVolumeMounts: []
 
+# extraEnv: Add individual environment variables referencing existing secrets
+# Example:
+# extraEnv:
+#   - name: FILEBROWSER_JWT_KEY
+#     valueFrom:
+#       secretKeyRef:
+#         name: filebrowser-jwt-secret
+#         key: jwt-token
+#   - name: ONLYOFFICE_JWT_SECRET
+#     valueFrom:
+#       secretKeyRef:
+#         name: onlyoffice-secret
+#         key: jwt-secret
+extraEnv: []
+
+# extraEnvFromSecrets: Load entire secrets as environment variables
+# Example:
+# extraEnvFromSecrets:
+#   - secretRef:
+#       name: my-existing-secret
+extraEnvFromSecrets: []
+
 #adminPassword: config for FILEBROWSER_ADMIN_PASSWORD env var.
 adminPassword:
   #passwordLength: for auto-generated password. Also set the minLength under config
