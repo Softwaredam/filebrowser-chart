@@ -47,9 +47,6 @@ spec:
           envFrom:
             - secretRef:
                 name: {{ .Release.Name }}-filebrowser-quantum
-            {{- with .Values.extraEnvFromSecrets }}
-            {{- toYaml . | nindent 12 }}
-            {{- end }}
           resources:
             requests:
               cpu: {{ .Values.resources.requests.cpu }}
