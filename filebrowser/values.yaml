@@ -69,6 +69,31 @@ extraVolumes: []
 #     readOnly: false
 extraVolumeMounts: []
 
+# extraEnv: Add individual environment variables referencing existing secrets
+# Example:
+# extraEnv:
+#     - name: FILEBROWSER_ADMIN_PASSWORD
+#       valueFrom:
+#         secretKeyRef:
+#           name: filebrowser-admin
+#           key: password
+#     - name: FILEBROWSER_ONLYOFFICE_SECRET
+#       valueFrom:
+#         secretKeyRef:
+#           name: filebrowser-jwt-token
+#           key: SECRET
+#     - name: FILEBROWSER_OIDC_CLIENT_ID
+#       valueFrom:
+#         secretKeyRef:
+#           name: filebrowser-oidc-client
+#           key: id
+#     - name: FILEBROWSER_OIDC_CLIENT_SECRET
+#       valueFrom:
+#         secretKeyRef:
+#           name: filebrowser-oidc-client
+#           key: secret
+extraEnv: []
+
 #adminPassword: overrides the FILEBROWSER_ADMIN_PASSWORD env var. 
 adminPassword:
   #passwordLength: for admin. Also set the minLength under config
