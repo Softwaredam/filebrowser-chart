@@ -29,8 +29,12 @@ If you require commercial support, consulting, or custom solutions, please feel 
 Install the chart directly from the GitHub Container Registry (OCI):
 
 ```bash
+
+CHART_VERSION='1.4.0-stable' #or your fav version.
+
 helm upgrade --install filebrowser \
   oci://ghcr.io/softwaredam/helm-charts/filebrowser-quantum \
+  --version "${CHART_VERSION}" \
   --namespace filebrowser \
   --create-namespace \
   --values filebrowser-values.yaml
