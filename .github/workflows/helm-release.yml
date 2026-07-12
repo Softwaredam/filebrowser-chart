@@ -1,0 +1,65 @@
+# .github/workflows/helm-release.yml
+name: Release Helm Chart
+
+on:
+  push:
+    tags:
+      - 'filebrowser-quantum-v*'   # only triggers on tags like filebrowser-quantum-v1.2.3
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # needed for git-cliff changelog range
+
+      - name: Extract version from tag
+        id: version
+        run: |
+          # strips "filebrowser-quantum-v" prefix → "1.2.3"
+          VERSION=${GITHUB_REF_NAME#filebrowser-quantum-v}
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v4
+
+      - name: Lint chart
+        run: helm lint filebrowser
+
+      - name: Generate changelog
+        id: changelog
+        uses: orhun/git-cliff-action@v4
+        with:
+          args: --latest --strip header
+        env:
+          OUTPUT: CHANGELOG.md
+          GITHUB_REPO: ${{ github.repository }}
+
+      - name: Update Chart.yaml version
+        run: |
+          sed -i "s/^version:.*/version: ${{ steps.version.outputs.version }}/" filebrowser/Chart.yaml
+
+      - name: Login to GHCR
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" | helm registry login ghcr.io \
+            -u ${{ github.actor }} --password-stdin
+
+      - name: Package and push chart
+        run: |
+          helm package filebrowser --version ${{ steps.version.outputs.version }}
+          helm push filebrowser-quantum-${{ steps.version.outputs.version }}.tgz \
+            oci://ghcr.io/${{ github.repository_owner }}/helm-charts
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: "filebrowser-quantum v${{ steps.version.outputs.version }}"
+          body: ${{ steps.changelog.outputs.content }}
+          files: filebrowser-quantum-${{ steps.version.outputs.version }}.tgz

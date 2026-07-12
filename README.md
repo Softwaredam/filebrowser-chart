@@ -24,6 +24,18 @@ If you require commercial support, consulting, or custom solutions, please feel 
 - Sufficent resources
 - Helm3
 
+## Quick Start
+
+Install the chart directly from the GitHub Container Registry (OCI):
+
+```bash
+helm upgrade --install filebrowser \
+  oci://ghcr.io/softwaredam/helm-charts/filebrowser-quantum \
+  --namespace filebrowser \
+  --create-namespace \
+  --values filebrowser-values.yaml
+```
+
 ## Configuration
 
 This chart supports multiple ways to prepare your deployment configuration. See `values.yaml` for all the possibilities. 
@@ -34,12 +46,9 @@ Filebrowser Quantum requires a `config.yaml` for application configuration. This
 ### Admin password
 After each upgrade/deploy, a new password will be generated for the admin user. This is intentional to keep the admin password rolling. the default admin password can be overridden (not recommended) through config. 
 
-To get the password, use the following for ease:
+To get the password, use the following:
 ```bash
-export FILEBROWSER_NAMESPACE="filebrowser"
-export RELEASE_NAME="share"
-
-kubectl -n "${FILEBROWSER_NAMESPACE}"  get secrets ${RELEASE_NAME}-filebrowser-quantum -oyaml | yq '.data.FILEBROWSER_ADMIN_PASSWORD' | base64 -d | pbcopy
+kubectl -n filebrowser get secrets filebrowser-filebrowser-quantum -oyaml | yq '.data.FILEBROWSER_ADMIN_PASSWORD' | base64 -d | pbcopy
 ```
 
 ### Other secrets
@@ -111,23 +120,6 @@ adminPassword:
 extraEnvSecrets:
     FILEBROWSER_OIDC_CLIENT_ID: the-oidc-client-id
     FILEBROWSER_OIDC_CLIENT_SECRET: the-oidc-client-secret
-```
-
-## Deployment
-
-Use `helm` to install, like:
-
-```bash
-export FILEBROWSER_NAMESPACE="filebrowser"
-export RELEASE_NAME="share"
-
-helm upgrade --install \
-     --namespace="${FILEBROWSER_NAMESPACE}" \
-     --create-namespace \
-     "${RELEASE_NAME}" \
-     filebrowser \
-     --values filebrowser-values.yaml \
-     --values decrypted-sops-secrets.yaml
 ```
 
 ## Kubernetes objects
