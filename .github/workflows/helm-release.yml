@@ -107,6 +107,33 @@ jobs:
           OUTPUT: CHANGELOG.md
           GITHUB_REPO: ${{ github.repository }}
 
+      - name: Build release notes
+        if: ${{ !inputs.dry_run }}
+        env:
+          CHANGELOG_BODY: ${{ steps.changelog.outputs.content }}
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          {
+            echo "## 📦 Install"
+            echo
+            echo '```bash'
+            echo "helm upgrade --install filebrowser \\"
+            echo "  oci://${OCI_REPO}/${CHART_NAME} \\"
+            echo "  --version \"${VERSION}\" \\"
+            echo "  --namespace filebrowser \\"
+            echo "  --create-namespace \\"
+            echo "  --values filebrowser-values.yaml"
+            echo '```'
+            echo
+            if [ "${{ github.ref_type }}" = "tag" ]; then
+              echo "## 📝 What's changed"
+              echo
+              echo "${CHANGELOG_BODY}"
+            else
+              echo "> ⚠️ **Test build** from \`${{ github.ref_name }}\` @ \`${{ github.sha }}\` — not an official release, draft only."
+            fi
+          } > RELEASE_NOTES.md
+
       - name: Create GitHub Release
         if: ${{ !inputs.dry_run }}
         uses: softprops/action-gh-release@v2
@@ -116,5 +143,5 @@ jobs:
           name: "${{ env.CHART_NAME }} v${{ steps.version.outputs.version }}"
           draft: ${{ github.ref_type != 'tag' }}
           prerelease: ${{ github.ref_type != 'tag' }}
-          body: ${{ github.ref_type == 'tag' && steps.changelog.outputs.content || format('Test build from `{0}` @ `{1}`. Not an official release — draft only.', github.ref_name, github.sha) }}
+          body_path: RELEASE_NOTES.md
           files: "${{ env.CHART_NAME }}-${{ steps.version.outputs.version }}.tgz"
