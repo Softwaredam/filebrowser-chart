@@ -1,7 +1,7 @@
 # image: location, and version of the filebrowser-quantum to use
 image:
   repository: ghcr.io/gtsteffaniak/filebrowser
-  tag: 1.4.0-stable
+  tag: 1.5.3-stable
   pullPolicy: IfNotPresent
 
 # securityContext: of the pod
