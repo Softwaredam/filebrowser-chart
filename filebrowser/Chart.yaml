@@ -2,3 +2,4 @@ apiVersion: v2
 name: filebrowser-quantum
 version: "0.1"
 appVersion: "0.1"
+icon: https://raw.githubusercontent.com/softwaredam/filebrowser-chart/main/icon.svg

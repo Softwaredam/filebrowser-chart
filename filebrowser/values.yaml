@@ -7,6 +7,18 @@ image:
 # securityContext: of the pod
 securityContext:
   runAsUser: 1000
+  runAsNonRoot: true
+  fsGroup: 0
+
+# containerSecurityContext: undefined. See example to enable defining container security context for priviliged namespaces.
+containerSecurityContext: {}
+  # allowPrivilegeEscalation: false
+  # readOnlyRootFilesystem: false
+  # capabilities:
+  #   drop:
+  #     - ALL
+  # seccompProfile:
+  #   type: RuntimeDefault
 
 #extraPodLabels: 
 extraPodLabels: {}

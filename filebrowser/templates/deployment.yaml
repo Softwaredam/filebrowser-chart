@@ -29,11 +29,13 @@ spec:
     spec:
       serviceAccountName: {{ .Values.serviceAccount.name }}
       securityContext:
-        runAsUser: {{ .Values.securityContext.runAsUser }}
-        runAsNonRoot: true
-        fsGroup: 0
+        {{- toYaml .Values.securityContext | nindent 8 }}
       containers:
         - name: filebrowser
+          {{- if .Values.containerSecurityContext }}
+          securityContext:
+            {{- toYaml .Values.containerSecurityContext | nindent 12 }}
+          {{- end }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
